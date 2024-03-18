@@ -61,5 +61,4 @@ subTaskRoutes.post('/', authenticateUser, async (req, res) => {
     }
   });
   
-
 module.exports = {subTaskRoutes};
