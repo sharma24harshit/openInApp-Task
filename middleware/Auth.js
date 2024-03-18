@@ -10,7 +10,7 @@ const authenticateUser = (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, 'openInApp');
     if(decoded){
-      req.user = decoded.user;
+      req.user_id = decoded.user;
       next();
     }
     else{

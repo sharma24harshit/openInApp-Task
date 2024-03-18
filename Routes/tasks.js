@@ -9,7 +9,7 @@ const taskRoutes = express.Router();
 taskRoutes.post('/', authenticateUser, async (req, res) => {
     try {
       const { title, description, due_date, priority } = req.body;
-      const userId = req.user; // Assuming user ID is included in the JWT payload
+      const userId = req.user_id; // Assuming user ID is included in the JWT payload
   
       const task = new TaskModel({
         title,
@@ -30,7 +30,7 @@ taskRoutes.post('/', authenticateUser, async (req, res) => {
   // Get all user tasks (with filters like priority, due date, and pagination)
   taskRoutes.get('/', authenticateUser, async (req, res) => {
     try {
-      const userId = req.user;
+      const userId = req.user_id;
       const { priority, due_date, page = 1, limit = 5 } = req.query;
   
       const query = { user: userId };
