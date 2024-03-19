@@ -8,14 +8,36 @@ const taskRoutes = express.Router();
 // Add new task
 taskRoutes.post('/', authenticateUser, async (req, res) => {
     try {
-      const { title, description, due_date, priority } = req.body;
+      const { title, description, due_date} = req.body;
       const userId = req.user_id; // Assuming user ID is included in the JWT payload
+
+        // Calculate the difference in days between today and the due date
+        const today = new Date();
+        const dueDate = new Date(due_date);
+        const timeDiff = dueDate.getTime() - today.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+       if(daysDiff<=-1){
+        return res.send({"success":true,"msg":"You cannot select past due date.Please select correct task due date"});
+       }
+
+        // Update the priority based on the calculated difference
+        let task_priority=0;
+        if (daysDiff === 0) {
+          task_priority = 0;
+        } else if (daysDiff <= 2) {
+          task_priority = 1;
+        } else if (daysDiff <= 4) {
+          task_priority = 2;
+        } else {
+          task_priority = 3;
+        }
   
       const task = new TaskModel({
         title,
         description,
         due_date,
-        priority,
+        priority:task_priority,
         user: userId,
       });
       await task.save();
@@ -33,7 +55,7 @@ taskRoutes.post('/', authenticateUser, async (req, res) => {
       const userId = req.user_id;
       const { priority, due_date, page = 1, limit = 5 } = req.query;
   
-      const query = { user: userId };
+      const query = { user: userId, deleted_at: { $exists: false } };
       if (priority) query.priority = priority;
       if (due_date) query.due_date = due_date;
   
