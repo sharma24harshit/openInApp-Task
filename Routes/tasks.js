@@ -1,7 +1,12 @@
 const express = require('express');
 const authenticateUser = require('../middleware/Auth');
 const {TaskModel} = require('../Models/task.model');
+const {UserModel} = require('../Models/user.model');
 const cron = require('node-cron');
+require("dotenv").config()
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = require('twilio')(accountSid, authToken);
 
 const taskRoutes = express.Router();
 
@@ -150,5 +155,60 @@ taskRoutes.post('/', authenticateUser, async (req, res) => {
     scheduled: true,
     timezone: 'Asia/Kolkata'
   });
+
+  // calling cron job
+
+  // Function to initiate a voice call using Twilio
+async function initiateVoiceCall(userPhoneNumber) {
+  try {
+    const call = await client.calls.create({
+      twiml: '<Response><Say>Ahoy, World!</Say></Response>',
+      to: userPhoneNumber,
+      from: '+919778554362'
+    });
+    console.log('Voice call initiated to:', userPhoneNumber, 'Call SID:', call.sid);
+    return true; // Call successful
+  } catch (error) {
+    console.error('Error initiating voice call:', error);
+    return false; // Call failed
+  }
+}
+
+// Cron job to initiate voice calls for tasks that have passed their due dates
+cron.schedule('0 0 * * *', async () => {
+  try {
+    // Fetch all tasks that have passed their due dates
+    const overdueTasks = await TaskModel.find({ due_date: { $lt: new Date() } });
+
+    // Sort tasks by priority
+    overdueTasks.sort((a, b) => a.priority - b.priority);
+
+    // Fetch users sorted by their priority
+    const users = await UserModel.find().sort({ priority: 1 });
+
+    let callMade = false;
+    // Iterate through users and initiate calls based on their priority
+    for (const user of users) {
+      if (callMade) break; // If call already made, break loop
+      for (const task of overdueTasks) {
+        if (task.user.toString() === user._id.toString()) {
+          // Call user only if call has not been made yet
+          if (!callMade) {
+            const callStatus = await initiateVoiceCall(user.phone_number);
+            if (callStatus) {
+              callMade = true;
+            }
+          }
+          break; // Move to the next user
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in voice calling cron job:', error);
+  }
+}, {
+  scheduled: true,
+  timezone: 'Asia/Kolkata' // Set timezone appropriately
+});
   
   module.exports = {taskRoutes};

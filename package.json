@@ -17,6 +17,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.2.2",
     "node-cron": "^3.0.3",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "twilio": "^5.0.1"
   }
 }

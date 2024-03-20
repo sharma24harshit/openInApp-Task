@@ -21,7 +21,7 @@ subTaskRoutes.post('/', authenticateUser, async (req, res) => {
   subTaskRoutes.get('/', authenticateUser, async (req, res) => {
     try {
       const { task_id } = req.query;
-      const tasks = await SubTaskModel.find({task_id});
+      const tasks = await SubTaskModel.find({task_id, deleted_at: { $exists: false } });
       res.json(tasks);
     } catch (error) {
       console.error(error);
