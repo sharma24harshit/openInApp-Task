@@ -2,6 +2,7 @@ const express = require('express');
 const authenticateUser = require('../middleware/Auth');
 const {TaskModel} = require('../Models/task.model');
 const {UserModel} = require('../Models/user.model');
+const {SubTaskModel} = require('../Models/subTask.model');
 const cron = require('node-cron');
 require("dotenv").config()
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -103,12 +104,18 @@ taskRoutes.post('/', authenticateUser, async (req, res) => {
     try {
       const taskId = req.params.id;
   
-      const task = await TaskModel.findByIdAndUpdate(taskId, { deleted_at: Date.now() });
+      const task = await TaskModel.findById(taskId);
       if (!task) {
         return res.status(404).json({ message: 'Task not found' });
       }
-  
-      res.json({ message: 'Task deleted successfully' });
+     // Soft delete the task
+     task.deleted_at = Date.now();
+     await task.save();
+
+        // Update corresponding subtasks with deleted_at timestamp
+    await SubTaskModel.updateMany({ task_id: taskId }, { deleted_at: Date.now() });
+
+    res.json({ message: 'Task deleted successfully' });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Internal Server Error' });
