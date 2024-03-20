@@ -19,7 +19,6 @@ app.use('/tasks', taskRoutes);
 app.use('/subtasks', subTaskRoutes);
 app.use('/users', userRoutes);
 
-// Error handling middleware
 app.use(errorHandler);
 
 app.listen(process.env.PORT , async()=>{
